@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Lembar Kerja Grafika Komputer — Linear, Transformasi, Color Space</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#0e2a45;
+    --paper-2:#123453;
+    --panel:#0c243c;
+    --grid:rgba(148,197,236,.14);
+    --grid-strong:rgba(148,197,236,.4);
+    --ink:#eaf3fb;
+    --muted:#89a9c6;
+    --accent:#ffb703;
+    --accent-ink:#231400;
+    --cyan:#6ec6ff;
+    --danger:#ff8a80;
+    --border:#254d74;
+    --field:#092138;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;}
+  body{
+    font-family:'IBM Plex Sans', Arial, sans-serif;
+    background:
+      linear-gradient(var(--grid) 1px, transparent 1px) 0 0/24px 24px,
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0/24px 24px,
+      var(--paper);
+    color:var(--ink);
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+  }
+  ::selection{ background:var(--accent); color:var(--accent-ink); }
+
+  /* ===== Top strip ===== */
+  .top-strip{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:14px 22px;
+    border-bottom:2px solid var(--border);
+    background:rgba(9,33,56,.85);
+    backdrop-filter:blur(6px);
+    position:sticky;
+    top:0;
+    z-index:20;
+  }
+  .brand{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+  }
+  .brand .mark{
+    font-family:'IBM Plex Mono', monospace;
+    font-weight:700;
+    font-size:13px;
+    color:var(--accent-ink);
+    background:var(--accent);
+    padding:3px 8px;
+    border-radius:3px;
+    letter-spacing:.06em;
+  }
+  .brand h1{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:16px;
+    font-weight:600;
+    margin:0;
+    letter-spacing:.02em;
+  }
+  .top-strip .meta{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:var(--muted);
+    text-align:right;
+    line-height:1.5;
+  }
+
+  /* ===== App shell: sidebar tabs + sheet area ===== */
+  .shell{
+    flex:1;
+    display:grid;
+    grid-template-columns:76px 1fr;
+    max-width:1280px;
+    width:100%;
+    margin:0 auto;
+    min-height:0;
+  }
+
+  .tab-rail{
+    border-right:2px solid var(--border);
+    display:flex;
+    flex-direction:column;
+    padding-top:18px;
+    gap:10px;
+    background:rgba(9,33,56,.4);
+  }
+  .tab-btn{
+    position:relative;
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-right:none;
+    color:var(--muted);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:.08em;
+    padding:16px 6px;
+    margin-right:-2px;
+    border-radius:6px 0 0 6px;
+    cursor:pointer;
+    writing-mode:vertical-rl;
+    text-orientation:mixed;
+    transition:all .15s ease;
+  }
+  .tab-btn .num{
+    display:block;
+    writing-mode:horizontal-tb;
+    font-size:15px;
+    color:var(--accent);
+    margin-bottom:8px;
+  }
+  .tab-btn:hover{ color:var(--ink); }
+  .tab-btn.active{
+    background:var(--paper-2);
+    color:var(--ink);
+    border-color:var(--accent);
+    box-shadow:inset 3px 0 0 var(--accent);
+  }
+
+  .sheet-area{ padding:22px; min-width:0; }
+  .sheet{ display:none; }
+  .sheet.active{ display:block; }
+
+  .sheet-head{
+    display:flex;
+    align-items:baseline;
+    gap:12px;
+    border-bottom:1px dashed var(--border);
+    padding-bottom:10px;
+    margin-bottom:16px;
+  }
+  .sheet-head .tag{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--accent-ink);
+    background:var(--accent);
+    padding:2px 7px;
+    border-radius:3px;
+  }
+  .sheet-head h2{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:19px;
+    margin:0;
+    font-weight:600;
+  }
+  .sheet-desc{
+    color:var(--muted);
+    font-size:13.5px;
+    margin:0 0 18px;
+    max-width:70ch;
+  }
+
+  .grid-2{
+    display:grid;
+    grid-template-columns:340px 1fr;
+    gap:20px;
+    align-items:start;
+  }
+  @media (max-width: 880px){
+    .grid-2{ grid-template-columns:1fr; }
+    .shell{ grid-template-columns:52px 1fr; }
+    .tab-btn{ padding:12px 4px; font-size:10px; }
+  }
+
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:16px;
+  }
+  .panel h3{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    color:var(--cyan);
+    margin:18px 0 8px;
+  }
+  .panel h3:first-child{ margin-top:0; }
+
+  label{
+    display:block;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--muted);
+    margin:10px 0 4px;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+  }
+  input, select{
+    width:100%;
+    background:var(--field);
+    color:var(--ink);
+    border:1px solid var(--border);
+    border-radius:5px;
+    padding:9px 10px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;
+    outline:none;
+  }
+  input:focus, select:focus{
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px rgba(255,183,3,.18);
+  }
+
+  .row2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .row3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+
+  .btn{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    font-weight:600;
+    letter-spacing:.03em;
+    border:1px solid var(--accent);
+    background:transparent;
+    color:var(--accent);
+    padding:9px 14px;
+    border-radius:5px;
+    cursor:pointer;
+    margin:14px 8px 0 0;
+    transition:all .12s ease;
+  }
+  .btn:hover{ background:var(--accent); color:var(--accent-ink); }
+  .btn.ghost{ border-color:var(--border); color:var(--muted); }
+  .btn.ghost:hover{ background:var(--border); color:var(--ink); }
+  .btn.solid{ background:var(--cyan); border-color:var(--cyan); color:#062134; }
+  .btn.solid:hover{ filter:brightness(1.1); }
+
+  canvas{
+    width:100%;
+    max-width:720px;
+    background:var(--field);
+    border:1px solid var(--border);
+    border-radius:8px;
+    display:block;
+  }
+  .canvas-caption{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--muted);
+    margin-top:8px;
+  }
+
+  .readout{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12.5px;
+    background:var(--field);
+    border:1px solid var(--border);
+    border-left:3px solid var(--accent);
+    border-radius:0 6px 6px 0;
+    padding:12px 14px;
+    margin-top:14px;
+    white-space:pre-wrap;
+    min-height:60px;
+    overflow-x:auto;
+  }
+
+  table{ width:100%; border-collapse:collapse; margin-top:12px; font-size:13px; }
+  th,td{ border:1px solid var(--border); padding:8px 10px; text-align:left; }
+  th{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    color:var(--cyan);
+    background:var(--field);
+  }
+
+  .swatch{
+    height:80px;
+    border-radius:8px;
+    border:1px solid var(--border);
+    margin-top:12px;
+    background:rgb(255,128,0);
+  }
+
+  /* ===== Title block (signature element) ===== */
+  .title-block{
+    border-top:2px solid var(--border);
+    background:rgba(9,33,56,.9);
+    padding:10px 22px;
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:0;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--muted);
+  }
+  .title-block .cell{
+    border-left:1px solid var(--border);
+    padding:4px 14px;
+  }
+  .title-block .cell:first-child{ border-left:none; }
+  .title-block .cell b{ display:block; color:var(--ink); font-size:12px; }
+  @media (max-width:880px){
+    .title-block{ grid-template-columns:1fr 1fr; }
+    .title-block .cell{ border-left:none; border-top:1px solid var(--border); }
+    .title-block .cell:nth-child(odd){ border-left:none; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="top-strip">
+    <div class="brand">
+      <span class="mark">FP·GK</span>
+      <h1>Lembar Kerja Grafika Komputer</h1>
+    </div>
+    <div class="meta">
+      GENAP 2025/2026<br>
+      MATERI: LINEAR · TRANSFORMASI · COLOR SPACE
+    </div>
+  </div>
+
+  <div class="shell">
+    <nav class="tab-rail">
+      <button class="tab-btn active" data-sheet="sheetA" onclick="showSheet('sheetA', this)">
+        <span class="num">A</span>LINEAR
+      </button>
+      <button class="tab-btn" data-sheet="sheetB" onclick="showSheet('sheetB', this)">
+        <span class="num">B</span>TRANSFORMASI
+      </button>
+      <button class="tab-btn" data-sheet="sheetC" onclick="showSheet('sheetC', this)">
+        <span class="num">C</span>COLOR&nbsp;SPACE
+      </button>
+    </nav>
+
+    <div class="sheet-area">
+
+      <!-- SHEET A: LINEAR -->
+      <section class="sheet active" id="sheetA">
+        <div class="sheet-head">
+          <span class="tag">LEMBAR A</span>
+          <h2>Linear — DDA, Bresenham &amp; Midpoint Circle</h2>
+        </div>
+        <p class="sheet-desc">
+          Algoritma dasar pembentukan objek grafis berbasis piksel. DDA dan Bresenham membentuk garis lurus,
+          Midpoint Circle membentuk lingkaran, seluruhnya diplot pada bidang koordinat kartesius.
+        </p>
+
+        <div class="grid-2">
+          <div class="panel">
+            <h3>Parameter Garis</h3>
+            <label>Algoritma</label>
+            <select id="lineAlgorithm">
+              <option value="dda">DDA Line</option>
+              <option value="bresenham">Bresenham Line</option>
+            </select>
+            <div class="row2">
+              <div><label>x1</label><input type="number" id="x1" value="-10"></div>
+              <div><label>y1</label><input type="number" id="y1" value="-6"></div>
+              <div><label>x2</label><input type="number" id="x2" value="12"></div>
+              <div><label>y2</label><input type="number" id="y2" value="8"></div>
+            </div>
+            <button class="btn" onclick="drawLine()">Plot Garis</button>
+
+            <h3>Parameter Lingkaran</h3>
+            <div class="row3">
+              <div><label>xc</label><input type="number" id="xc" value="0"></div>
+              <div><label>yc</label><input type="number" id="yc" value="0"></div>
+              <div><label>Radius</label><input type="number" id="r" value="8" min="1"></div>
+            </div>
+            <button class="btn solid" onclick="drawCircle()">Plot Lingkaran</button>
+            <button class="btn ghost" onclick="clearLinear()">Bersihkan Lembar</button>
+
+            <div id="linearOutput" class="readout"></div>
+          </div>
+
+          <div>
+            <canvas id="linearCanvas" width="720" height="520"></canvas>
+            <p class="canvas-caption">1 kotak grid = 20 px · sumbu kartesius, titik asal di tengah bidang gambar.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- SHEET B: TRANSFORMASI -->
+      <section class="sheet" id="sheetB">
+        <div class="sheet-head">
+          <span class="tag">LEMBAR B</span>
+          <h2>Transformasi 2D</h2>
+        </div>
+        <p class="sheet-desc">
+          Translasi, scaling, rotasi, refleksi, dan shearing diterapkan pada sebuah segitiga menggunakan
+          rumus transformasi matriks 2D, dibandingkan terhadap bentuk aslinya pada satu bidang gambar.
+        </p>
+
+        <div class="grid-2">
+          <div class="panel">
+            <h3>Titik Objek (Segitiga)</h3>
+            <div class="row3">
+              <div><label>A (x,y)</label><input type="text" id="pA" value="-5,-4"></div>
+              <div><label>B (x,y)</label><input type="text" id="pB" value="5,-4"></div>
+              <div><label>C (x,y)</label><input type="text" id="pC" value="0,6"></div>
+            </div>
+
+            <h3>Jenis Transformasi</h3>
+            <select id="transformType" onchange="updateTransformFields()">
+              <option value="translation">Translasi</option>
+              <option value="scaling">Scaling</option>
+              <option value="rotation">Rotation</option>
+              <option value="reflectionX">Reflection terhadap sumbu X</option>
+              <option value="reflectionY">Reflection terhadap sumbu Y</option>
+              <option value="shearingX">Shearing X</option>
+              <option value="shearingY">Shearing Y</option>
+            </select>
+            <div id="transformInputs"></div>
+
+            <button class="btn" onclick="applyTransform()">Proses Transformasi</button>
+            <button class="btn ghost" onclick="resetTransform()">Reset Lembar</button>
+
+            <div id="transformOutput" class="readout"></div>
+          </div>
+
+          <div>
+            <canvas id="transformCanvas" width="720" height="520"></canvas>
+            <p class="canvas-caption">Garis putus-putus = objek awal &nbsp;·&nbsp; garis penuh = hasil transformasi.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- SHEET C: COLOR SPACE -->
+      <section class="sheet" id="sheetC">
+        <div class="sheet-head">
+          <span class="tag">LEMBAR C</span>
+          <h2>Color Space — RGB, CMYK &amp; HSV</h2>
+        </div>
+        <p class="sheet-desc">
+          Konversi ruang warna dari model aditif RGB ke model subtraktif CMYK dan model HSV,
+          dihitung langsung dari nilai kanal merah, hijau, dan biru yang dimasukkan.
+        </p>
+
+        <div class="grid-2">
+          <div class="panel">
+            <h3>Input RGB</h3>
+            <div class="row3">
+              <div><label>R (0–255)</label><input type="number" id="rgbR" value="255" min="0" max="255"></div>
+              <div><label>G (0–255)</label><input type="number" id="rgbG" value="128" min="0" max="255"></div>
+              <div><label>B (0–255)</label><input type="number" id="rgbB" value="0" min="0" max="255"></div>
+            </div>
+            <button class="btn" onclick="convertColor()">Konversi</button>
+            <button class="btn ghost" onclick="randomColor()">Acak</button>
+
+            <div class="swatch" id="colorPreview"></div>
+            <div id="colorOutput" class="readout"></div>
+          </div>
+
+          <div class="panel">
+            <h3>Tabel Hasil Konversi</h3>
+            <table>
+              <thead>
+                <tr><th>Ruang Warna</th><th>Nilai</th><th>Keterangan</th></tr>
+              </thead>
+              <tbody id="colorTable"></tbody>
+            </table>
+            <p class="canvas-caption" style="margin-top:12px;">
+              CMYK dihitung dari normalisasi RGB (0–1). HSV dihitung dari nilai maksimum, minimum,
+              dan selisih antar kanal warna.
+            </p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <div class="title-block">
+    <div class="cell"><b>PROYEK</b>Final Project Grafika Komputer</div>
+    <div class="cell" id="tbSheet"><b>LEMBAR AKTIF</b>A — Linear</div>
+    <div class="cell"><b>SKALA GRID</b>1 : 20 px</div>
+    <div class="cell"><b>MATERI</b>Linear · Transformasi · Color Space</div>
+    <div class="cell"><b>REVISI</b>UI Alternatif — logika perhitungan identik</div>
+  </div>
+
+<script>
+  // ============================
+  // NAVIGASI TAB / LEMBAR
+  // ============================
+  const sheetTitles = {
+    sheetA: "A — Linear",
+    sheetB: "B — Transformasi",
+    sheetC: "C — Color Space"
+  };
+
+  function showSheet(id, btn){
+    document.querySelectorAll(".sheet").forEach(s => s.classList.remove("active"));
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+    btn.classList.add("active");
+    document.getElementById("tbSheet").innerHTML = `<b>LEMBAR AKTIF</b>${sheetTitles[id]}`;
+  }
+
+  // ============================
+  // UTIL BERSAMA
+  // ============================
+  const GRID = 20;
+
+  function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, Number(value)));
+  }
+
+  function round2(value) {
+    return Math.round(value * 100) / 100;
+  }
+
+  function setupCanvas(canvasId) {
+    const canvas = document.getElementById(canvasId);
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawGrid(ctx, canvas);
+    return { canvas, ctx };
+  }
+
+  function drawGrid(ctx, canvas) {
+    ctx.save();
+    ctx.strokeStyle = "rgba(148,197,236,0.18)";
+    ctx.lineWidth = 1;
+
+    for (let x = 0; x <= canvas.width; x += GRID) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, canvas.height);
+      ctx.stroke();
+    }
+    for (let y = 0; y <= canvas.height; y += GRID) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(canvas.width, y);
+      ctx.stroke();
+    }
+
+    const originX = canvas.width / 2;
+    const originY = canvas.height / 2;
+
+    ctx.strokeStyle = "rgba(110,198,255,0.75)";
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(0, originY);
+    ctx.lineTo(canvas.width, originY);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(originX, 0);
+    ctx.lineTo(originX, canvas.height);
+    ctx.stroke();
+
+    ctx.fillStyle = "#eaf3fb";
+    ctx.font = "12px 'IBM Plex Mono', monospace";
+    ctx.fillText("0", originX + 6, originY - 6);
+    ctx.restore();
+  }
+
+  function toCanvasPoint(canvas, x, y) {
+    return {
+      x: canvas.width / 2 + x * GRID,
+      y: canvas.height / 2 - y * GRID
+    };
+  }
+
+  function drawPixel(ctx, canvas, x, y, color = "#ffb703") {
+    const p = toCanvasPoint(canvas, x, y);
+    ctx.fillStyle = color;
+    ctx.fillRect(p.x - 4, p.y - 4, 8, 8);
+  }
+
+  function drawConnectedPoints(ctx, canvas, points, color = "#ffb703", dashed = false) {
+    if (!points.length) return;
+
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2.4;
+    ctx.setLineDash(dashed ? [7, 6] : []);
+
+    ctx.beginPath();
+    let start = toCanvasPoint(canvas, points[0].x, points[0].y);
+    ctx.moveTo(start.x, start.y);
+
+    for (let i = 1; i < points.length; i++) {
+      let p = toCanvasPoint(canvas, points[i].x, points[i].y);
+      ctx.lineTo(p.x, p.y);
+    }
+
+    let end = toCanvasPoint(canvas, points[0].x, points[0].y);
+    ctx.lineTo(end.x, end.y);
+    ctx.stroke();
+    ctx.restore();
+
+    points.forEach(p => drawPointLabel(ctx, canvas, p.x, p.y, p.label || "", color));
+  }
+
+  function drawPointLabel(ctx, canvas, x, y, label, color) {
+    const p = toCanvasPoint(canvas, x, y);
+    ctx.save();
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 4.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#eaf3fb";
+    ctx.font = "12px 'IBM Plex Mono', monospace";
+    ctx.fillText(`${label}(${round2(x)}, ${round2(y)})`, p.x + 8, p.y - 8);
+    ctx.restore();
+  }
+
+  // ============================
+  // A. LINEAR — logika identik dengan versi asli
+  // ============================
+  function ddaLine(x1, y1, x2, y2) {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const steps = Math.max(Math.abs(dx), Math.abs(dy));
+    const xInc = dx / steps;
+    const yInc = dy / steps;
+
+    let x = x1;
+    let y = y1;
+    const points = [];
+
+    for (let i = 0; i <= steps; i++) {
+      points.push({ x: Math.round(x), y: Math.round(y) });
+      x += xInc;
+      y += yInc;
+    }
+    return points;
+  }
+
+  function bresenhamLine(x1, y1, x2, y2) {
+    let points = [];
+    let dx = Math.abs(x2 - x1);
+    let dy = Math.abs(y2 - y1);
+    let sx = x1 < x2 ? 1 : -1;
+    let sy = y1 < y2 ? 1 : -1;
+    let err = dx - dy;
+
+    while (true) {
+      points.push({ x: x1, y: y1 });
+      if (x1 === x2 && y1 === y2) break;
+
+      let e2 = 2 * err;
+      if (e2 > -dy) { err -= dy; x1 += sx; }
+      if (e2 < dx) { err += dx; y1 += sy; }
+    }
+    return points;
+  }
+
+  function midpointCircle(xc, yc, r) {
+    let x = 0;
+    let y = r;
+    let p = 1 - r;
+    let points = [];
+
+    function addSymmetricPoints(x, y) {
+      points.push(
+        { x: xc + x, y: yc + y }, { x: xc - x, y: yc + y },
+        { x: xc + x, y: yc - y }, { x: xc - x, y: yc - y },
+        { x: xc + y, y: yc + x }, { x: xc - y, y: yc + x },
+        { x: xc + y, y: yc - x }, { x: xc - y, y: yc - x }
+      );
+    }
+
+    addSymmetricPoints(x, y);
+    while (x < y) {
+      x++;
+      if (p < 0) { p = p + 2 * x + 1; }
+      else { y--; p = p + 2 * (x - y) + 1; }
+      addSymmetricPoints(x, y);
+    }
+
+    const unique = new Map();
+    points.forEach(pt => unique.set(`${pt.x},${pt.y}`, pt));
+    return Array.from(unique.values());
+  }
+
+  function drawLine() {
+    const { canvas, ctx } = setupCanvas("linearCanvas");
+    const x1 = parseInt(document.getElementById("x1").value);
+    const y1 = parseInt(document.getElementById("y1").value);
+    const x2 = parseInt(document.getElementById("x2").value);
+    const y2 = parseInt(document.getElementById("y2").value);
+    const algo = document.getElementById("lineAlgorithm").value;
+
+    const points = algo === "dda" ? ddaLine(x1, y1, x2, y2) : bresenhamLine(x1, y1, x2, y2);
+
+    points.forEach(p => drawPixel(ctx, canvas, p.x, p.y, "#ffb703"));
+    drawPointLabel(ctx, canvas, x1, y1, "A", "#ff8a80");
+    drawPointLabel(ctx, canvas, x2, y2, "B", "#6ec6ff");
+
+    document.getElementById("linearOutput").textContent =
+      `Algoritma: ${algo === "dda" ? "DDA Line" : "Bresenham Line"}\n` +
+      `Input: A(${x1}, ${y1}) dan B(${x2}, ${y2})\n` +
+      `Jumlah titik hasil: ${points.length}\n` +
+      `Titik hasil:\n${points.map(p => `(${p.x}, ${p.y})`).join(" ")}`;
+  }
+
+  function drawCircle() {
+    const { canvas, ctx } = setupCanvas("linearCanvas");
+    const xc = parseInt(document.getElementById("xc").value);
+    const yc = parseInt(document.getElementById("yc").value);
+    const r = parseInt(document.getElementById("r").value);
+
+    const points = midpointCircle(xc, yc, r);
+    points.forEach(p => drawPixel(ctx, canvas, p.x, p.y, "#6ec6ff"));
+    drawPointLabel(ctx, canvas, xc, yc, "C", "#ff8a80");
+
+    document.getElementById("linearOutput").textContent =
+      `Algoritma: Midpoint Circle\n` +
+      `Input: pusat C(${xc}, ${yc}), radius ${r}\n` +
+      `Jumlah titik hasil: ${points.length}\n` +
+      `Titik hasil:\n${points.map(p => `(${p.x}, ${p.y})`).join(" ")}`;
+  }
+
+  function clearLinear() {
+    setupCanvas("linearCanvas");
+    document.getElementById("linearOutput").textContent = "";
+  }
+
+  // ============================
+  // B. TRANSFORMASI — logika identik dengan versi asli
+  // ============================
+  function parsePoint(inputId, label) {
+    const value = document.getElementById(inputId).value.trim();
+    const parts = value.split(",").map(Number);
+    if (parts.length !== 2 || parts.some(isNaN)) {
+      alert(`Format titik ${label} salah. Gunakan format x,y. Contoh: -5,4`);
+      throw new Error("Invalid point format");
+    }
+    return { x: parts[0], y: parts[1], label };
+  }
+
+  function getTrianglePoints() {
+    return [
+      parsePoint("pA", "A"),
+      parsePoint("pB", "B"),
+      parsePoint("pC", "C")
+    ];
+  }
+
+  function updateTransformFields() {
+    const type = document.getElementById("transformType").value;
+    const wrapper = document.getElementById("transformInputs");
+    let html = "";
+
+    if (type === "translation") {
+      html = `
+        <div class="row2">
+          <div><label>tx</label><input type="number" id="tx" value="6"></div>
+          <div><label>ty</label><input type="number" id="ty" value="3"></div>
+        </div>`;
+    } else if (type === "scaling") {
+      html = `
+        <div class="row2">
+          <div><label>sx</label><input type="number" id="sx" value="1.5" step="0.1"></div>
+          <div><label>sy</label><input type="number" id="sy" value="1.5" step="0.1"></div>
+        </div>`;
+    } else if (type === "rotation") {
+      html = `
+        <label>Sudut rotasi (derajat)</label>
+        <input type="number" id="angle" value="45">`;
+    } else if (type === "shearingX") {
+      html = `
+        <label>shx</label>
+        <input type="number" id="shx" value="1" step="0.1">`;
+    } else if (type === "shearingY") {
+      html = `
+        <label>shy</label>
+        <input type="number" id="shy" value="1" step="0.1">`;
+    } else {
+      html = `<p class="canvas-caption">Refleksi tidak membutuhkan parameter tambahan.</p>`;
+    }
+
+    wrapper.innerHTML = html;
+  }
+
+  function transformPoint(point, type) {
+    let x = point.x;
+    let y = point.y;
+    let nx = x;
+    let ny = y;
+    let formula = "";
+
+    if (type === "translation") {
+      const tx = Number(document.getElementById("tx").value);
+      const ty = Number(document.getElementById("ty").value);
+      nx = x + tx; ny = y + ty;
+      formula = `x' = x + tx, y' = y + ty`;
+    } else if (type === "scaling") {
+      const sx = Number(document.getElementById("sx").value);
+      const sy = Number(document.getElementById("sy").value);
+      nx = x * sx; ny = y * sy;
+      formula = `x' = x × sx, y' = y × sy`;
+    } else if (type === "rotation") {
+      const angle = Number(document.getElementById("angle").value);
+      const rad = angle * Math.PI / 180;
+      nx = x * Math.cos(rad) - y * Math.sin(rad);
+      ny = x * Math.sin(rad) + y * Math.cos(rad);
+      formula = `x' = x cos θ - y sin θ, y' = x sin θ + y cos θ`;
+    } else if (type === "reflectionX") {
+      nx = x; ny = -y;
+      formula = `x' = x, y' = -y`;
+    } else if (type === "reflectionY") {
+      nx = -x; ny = y;
+      formula = `x' = -x, y' = y`;
+    } else if (type === "shearingX") {
+      const shx = Number(document.getElementById("shx").value);
+      nx = x + shx * y; ny = y;
+      formula = `x' = x + shx × y, y' = y`;
+    } else if (type === "shearingY") {
+      const shy = Number(document.getElementById("shy").value);
+      nx = x; ny = y + shy * x;
+      formula = `x' = x, y' = y + shy × x`;
+    }
+
+    return { x: round2(nx), y: round2(ny), label: point.label + "'", formula };
+  }
+
+  function transformName(type) {
+    const names = {
+      translation: "Translasi",
+      scaling: "Scaling",
+      rotation: "Rotation",
+      reflectionX: "Reflection terhadap sumbu X",
+      reflectionY: "Reflection terhadap sumbu Y",
+      shearingX: "Shearing X",
+      shearingY: "Shearing Y"
+    };
+    return names[type];
+  }
+
+  function applyTransform() {
+    const { canvas, ctx } = setupCanvas("transformCanvas");
+    const original = getTrianglePoints();
+    const type = document.getElementById("transformType").value;
+    const transformed = original.map(p => transformPoint(p, type));
+
+    drawConnectedPoints(ctx, canvas, original, "#89a9c6", true);
+    drawConnectedPoints(ctx, canvas, transformed, "#6ec6ff", false);
+
+    const formula = transformed[0].formula;
+
+    document.getElementById("transformOutput").textContent =
+      `Jenis transformasi: ${transformName(type)}\n` +
+      `Rumus: ${formula}\n\n` +
+      `Titik awal:\n${original.map(p => `${p.label}(${p.x}, ${p.y})`).join("  ")}\n\n` +
+      `Titik hasil:\n${transformed.map(p => `${p.label}(${p.x}, ${p.y})`).join("  ")}`;
+  }
+
+  function resetTransform() {
+    document.getElementById("pA").value = "-5,-4";
+    document.getElementById("pB").value = "5,-4";
+    document.getElementById("pC").value = "0,6";
+    document.getElementById("transformType").value = "translation";
+    updateTransformFields();
+    setupCanvas("transformCanvas");
+    document.getElementById("transformOutput").textContent = "";
+  }
+
+  // ============================
+  // C. COLOR SPACE — logika identik dengan versi asli
+  // ============================
+  function rgbToCmyk(r, g, b) {
+    const rp = r / 255;
+    const gp = g / 255;
+    const bp = b / 255;
+
+    const k = 1 - Math.max(rp, gp, bp);
+    if (k === 1) return { c: 0, m: 0, y: 0, k: 100 };
+
+    const c = (1 - rp - k) / (1 - k);
+    const m = (1 - gp - k) / (1 - k);
+    const y = (1 - bp - k) / (1 - k);
+
+    return {
+      c: round2(c * 100),
+      m: round2(m * 100),
+      y: round2(y * 100),
+      k: round2(k * 100)
+    };
+  }
+
+  function rgbToHsv(r, g, b) {
+    const rp = r / 255;
+    const gp = g / 255;
+    const bp = b / 255;
+
+    const max = Math.max(rp, gp, bp);
+    const min = Math.min(rp, gp, bp);
+    const delta = max - min;
+
+    let h = 0;
+    if (delta === 0) h = 0;
+    else if (max === rp) h = 60 * (((gp - bp) / delta) % 6);
+    else if (max === gp) h = 60 * (((bp - rp) / delta) + 2);
+    else h = 60 * (((rp - gp) / delta) + 4);
+
+    if (h < 0) h += 360;
+
+    const s = max === 0 ? 0 : delta / max;
+    const v = max;
+
+    return { h: round2(h), s: round2(s * 100), v: round2(v * 100) };
+  }
+
+  function convertColor() {
+    const r = clamp(document.getElementById("rgbR").value, 0, 255);
+    const g = clamp(document.getElementById("rgbG").value, 0, 255);
+    const b = clamp(document.getElementById("rgbB").value, 0, 255);
+
+    document.getElementById("rgbR").value = r;
+    document.getElementById("rgbG").value = g;
+    document.getElementById("rgbB").value = b;
+
+    const cmyk = rgbToCmyk(r, g, b);
+    const hsv = rgbToHsv(r, g, b);
+    const hex = "#" + [r, g, b].map(v => Number(v).toString(16).padStart(2, "0")).join("").toUpperCase();
+
+    document.getElementById("colorPreview").style.background = `rgb(${r}, ${g}, ${b})`;
+
+    document.getElementById("colorOutput").textContent =
+      `Input RGB: (${r}, ${g}, ${b})\n` +
+      `HEX: ${hex}\n` +
+      `CMYK: C=${cmyk.c}%, M=${cmyk.m}%, Y=${cmyk.y}%, K=${cmyk.k}%\n` +
+      `HSV: H=${hsv.h}°, S=${hsv.s}%, V=${hsv.v}%`;
+
+    document.getElementById("colorTable").innerHTML = `
+      <tr><td>RGB</td><td>R=${r}, G=${g}, B=${b}</td><td>Model warna berbasis cahaya merah, hijau, dan biru.</td></tr>
+      <tr><td>CMYK</td><td>C=${cmyk.c}%, M=${cmyk.m}%, Y=${cmyk.y}%, K=${cmyk.k}%</td><td>Model warna subtraktif yang umum digunakan pada proses cetak.</td></tr>
+      <tr><td>HSV</td><td>H=${hsv.h}°, S=${hsv.s}%, V=${hsv.v}%</td><td>Model warna berdasarkan hue, saturation, dan value.</td></tr>
+      <tr><td>HEX</td><td>${hex}</td><td>Representasi warna dalam format heksadesimal.</td></tr>
+    `;
+  }
+
+  function randomColor() {
+    document.getElementById("rgbR").value = Math.floor(Math.random() * 256);
+    document.getElementById("rgbG").value = Math.floor(Math.random() * 256);
+    document.getElementById("rgbB").value = Math.floor(Math.random() * 256);
+    convertColor();
+  }
+
+  // Initial render
+  window.onload = function() {
+    clearLinear();
+    resetTransform();
+    convertColor();
+  };
+</script>
+</body>
+</html>
