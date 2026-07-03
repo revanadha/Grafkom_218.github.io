@@ -14,7 +14,7 @@ Tersedia dalam dua tampilan dengan **logika perhitungan yang identik**:
 - `index.html` — tampilan bergaya "meja gambar teknik / blueprint" dengan navigasi tab per lembar (versi utama/default).
 - `dashboard.html` — tampilan dashboard gelap dengan kartu bertumpuk (versi awal/alternatif).
 
-> Ganti nama file sesuai kebutuhan hosting kamu (lihat bagian [Deploy ke GitHub Pages](#deploy-ke-github-pages)).
+
 
 ---
 
