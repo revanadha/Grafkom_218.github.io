@@ -11,10 +11,9 @@ Aplikasi web statis (HTML/CSS/JavaScript murni, tanpa library eksternal) yang me
 
 Tersedia dalam dua tampilan dengan **logika perhitungan yang identik**:
 
-- `index.html` — tampilan bergaya "meja gambar teknik / blueprint" dengan navigasi tab per lembar (versi utama/default).
-- `dashboard.html` — tampilan dashboard gelap dengan kartu bertumpuk (versi awal/alternatif).
+- `index.html` — tampilan minimalis satu kolom bergaya "langkah 1-2-3", tombol pilihan besar (bukan dropdown), slider untuk warna, dan hanya satu warna aksen lembut. Dirancang supaya mudah diikuti tanpa perlu membaca dua kolom sekaligus (versi utama/default).
 
-
+> Ganti nama file sesuai kebutuhan hosting kamu (lihat bagian [Deploy ke GitHub Pages](#deploy-ke-github-pages)).
 
 ---
 
@@ -45,8 +44,7 @@ Buka file HTML langsung di browser (Chrome/Edge/Firefox), tidak memerlukan serve
 
 ```
 .
-├── index.html      # Versi UI blueprint / lembar gambar teknik (default)
-├── dashboard.html  # Versi UI dashboard gelap (alternatif)
+├── index.html      # Versi UI minimalis, alur langkah 1-2-3 (default)
 └── README.md
 ```
 
@@ -55,44 +53,20 @@ Buka file HTML langsung di browser (Chrome/Edge/Firefox), tidak memerlukan serve
 - HTML5 + CSS3 murni (tanpa framework CSS)
 - JavaScript vanilla (tanpa library/dependency eksternal)
 - Canvas API untuk visualisasi grafis
-- Google Fonts (IBM Plex Mono & IBM Plex Sans) — hanya pada versi blueprint, dimuat via CDN
+- Google Fonts (Inter) — dimuat via CDN
 
 Karena tidak ada proses build, kedua file dapat langsung dibuka sebagai file statis di browser maupun di-hosting di layanan static hosting mana pun.
 
 ## Menjalankan Secara Lokal
 
 1. Clone atau unduh repository ini.
-2. Buka `index.html` (atau `dashboard.html`) langsung dengan browser, **atau**
+2. Buka `index.html` 
 3. Jalankan local server sederhana (opsional, untuk menghindari batasan `file://` di beberapa browser):
 
-   ```bash
-   # Python 3
-   python -m http.server 8000
+## Menjalankan Secara Langsung
+1. klik (https://revanadha.github.io/Grafkom_218.github.io/)
 
-   # kemudian buka di browser:
-   # http://localhost:8000/index.html
-   ```
 
-## Deploy ke GitHub Pages
-
-1. Buat repository baru di GitHub, lalu push seluruh isi folder ini (termasuk `index.html`, `dashboard.html`, dan `README.md`).
-2. File **`index.html`** sudah berada di root repository, sehingga otomatis menjadi halaman utama yang tampil saat GitHub Pages diaktifkan.
-   - Jika ingin versi dashboard gelap yang tampil sebagai halaman utama, cukup tukar isi/nama kedua file (rename `dashboard.html` menjadi `index.html` dan sebaliknya).
-3. Masuk ke **Settings → Pages** pada repository.
-4. Pada bagian **Build and deployment**, pilih:
-   - **Source**: `Deploy from a branch`
-   - **Branch**: `main` (atau branch utama kamu), folder `/ (root)`
-5. Klik **Save**. Setelah beberapa saat, GitHub akan memberikan URL publik dengan format:
-
-   ```
-   https://<username-github>.github.io/<nama-repo>/
-   ```
-
-6. Untuk mengakses versi dashboard gelap (bukan halaman utama), tinggal tambahkan nama filenya di URL:
-
-   ```
-   https://<username-github>.github.io/<nama-repo>/dashboard.html
-   ```
 
 ## Catatan Implementasi
 
@@ -102,4 +76,4 @@ Karena tidak ada proses build, kedua file dapat langsung dibuka sebagai file sta
 
 ## Lisensi
 
-Proyek ini dibuat untuk keperluan tugas akademik (Final Project Grafika Komputer). Silakan gunakan atau modifikasi sesuai kebutuhan pembelajaran.
+Proyek ini dibuat untuk keperluan tugas akademik (Final Project Grafika Komputer).
