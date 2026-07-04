@@ -13,10 +13,6 @@ Tersedia dalam dua tampilan dengan **logika perhitungan yang identik**:
 
 - `index.html` — tampilan minimalis satu kolom bergaya "langkah 1-2-3", tombol pilihan besar (bukan dropdown), slider untuk warna, dan hanya satu warna aksen lembut. Dirancang supaya mudah diikuti tanpa perlu membaca dua kolom sekaligus (versi utama/default).
 
-> Ganti nama file sesuai kebutuhan hosting kamu (lihat bagian [Deploy ke GitHub Pages](#deploy-ke-github-pages)).
-
----
-
 ## Demo
 
 Buka file HTML langsung di browser (Chrome/Edge/Firefox), tidak memerlukan server atau instalasi apa pun.
@@ -65,8 +61,6 @@ Karena tidak ada proses build, kedua file dapat langsung dibuka sebagai file sta
 
 ## Menjalankan Secara Langsung
 1. klik (https://revanadha.github.io/Grafkom_218.github.io/)
-
-
 
 ## Catatan Implementasi
 
